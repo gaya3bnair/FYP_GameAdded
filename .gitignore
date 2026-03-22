@@ -1,0 +1,60 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+venv/
+.env/
+newvenv/
+env/
+
+# =========================
+# Flask / App
+# =========================
+instance/
+*.log
+
+# =========================
+# Environment variables (IMPORTANT)
+# =========================
+.env
+
+# =========================
+# Uploads (user files)
+# =========================
+uploads/
+
+# =========================
+# Vector DB / ML storage
+# =========================
+chroma_db/
+
+# =========================
+# OS / Editor files
+# =========================
+.DS_Store
+Thumbs.db
+
+# VS Code
+.vscode/
+
+# =========================
+# Node (if used later)
+# =========================
+node_modules/
+
+# =========================
+# Cache / temp
+# =========================
+.cache/
+*.tmp
+
+# =========================
+# Jupyter (if any)
+# =========================
+.ipynb_checkpoints/

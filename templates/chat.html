@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>RAG Chatbot with Memory</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Auth Container */
+        #authContainer {
+            width: 100%;
+            max-width: 400px;
+            background: #1a1a2e;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        #authContainer h2 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #a0a0b0;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            background: #2a2a40;
+            border: 2px solid #2a2a40;
+            border-radius: 10px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            border-color: #667eea;
+            background: #16213e;
+        }
+
+        .auth-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .auth-toggle {
+            text-align: center;
+            color: #a0a0b0;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+
+        .auth-toggle a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .error-message {
+            background: rgba(255, 68, 68, 0.1);
+            border: 1px solid rgba(255, 68, 68, 0.3);
+            color: #ff4444;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .success-message {
+            background: rgba(68, 255, 68, 0.1);
+            border: 1px solid rgba(68, 255, 68, 0.3);
+            color: #44ff44;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        /* Chat Container */
+        #chatbox {
+            width: 100%;
+            max-width: 800px;
+            background: #1a1a2e;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            max-height: 700px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left h2 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header-left p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .header-right {
+            text-align: right;
+        }
+
+        .user-info {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .signout-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.3s ease;
+        }
+
+        .signout-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        #uploadSection {
+            flex-shrink: 0;
+            background: #16213e;
+            padding: 20px;
+            border-bottom: 1px solid #2a2a40;
+        }
+
+        #uploadForm {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            flex: 1;
+        }
+
+        #fileInput {
+            opacity: 0;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        .file-input-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            background: #2a2a40;
+            color: #a0a0b0;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px dashed #3a3a50;
+        }
+
+        .file-input-label:hover {
+            background: #3a3a50;
+            border-color: #667eea;
+        }
+
+        #uploadBtn {
+            padding: 12px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        #uploadBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        #messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .msg {
+            display: flex;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .msg.user {
+            justify-content: flex-end;
+        }
+
+        .msg.bot {
+            justify-content: flex-start;
+        }
+
+        .msg-content {
+            max-width: 70%;
+            padding: 15px 20px;
+            border-radius: 18px;
+            word-wrap: break-word;
+        }
+
+        .msg.user .msg-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .msg.bot .msg-content {
+            background: #2a2a40;
+            color: #e0e0e0;
+            border-bottom-left-radius: 5px;
+        }
+
+        #inputSection {
+            background: #16213e;
+            padding: 20px;
+            border-top: 1px solid #2a2a40;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        #query {
+            flex: 1;
+            padding: 15px 20px;
+            background: #2a2a40;
+            border: 2px solid #2a2a40;
+            border-radius: 25px;
+            color: white;
+            font-size: 15px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        #query:focus {
+            border-color: #667eea;
+            background: #1a1a2e;
+        }
+
+        #sendBtn,
+        #micBtn {
+            padding: 15px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #sendBtn:hover,
+        #micBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .voice-button {
+            margin-left: 10px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            font-size: 18px;
+            transition: all 0.2s ease;
+        }
+
+        .voice-button.listening {
+            background: #ffdddd;
+        }
+
+        #voiceLangSelect {
+            padding: 8px 10px;
+            border-radius: 10px;
+            border: 1px solid #2a2a40;
+            background: #2a2a40;
+            color: #e0e0e0;
+            font-size: 13px;
+            max-width: 170px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        #voiceLangSelect:focus {
+            border-color: #667eea;
+            outline: none;
+        }
+
+        #gameContainer {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 18px;
+            padding: 20px 16px 16px;
+        }
+
+        #gameMenu,
+        #difficultyMenu {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        #gameStage {
+            width: 760px;
+            max-width: 100%;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #gameHud {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            backdrop-filter: blur(6px);
+            padding: 11px 14px;
+            color: #f3f4ff;
+            font-size: 14px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+        }
+
+        .hud-stats {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        #backToMenuBtn {
+            background: #5d70ef;
+            margin: 0;
+            padding: 8px 12px;
+        }
+
+        .gameBoardRow {
+            width: 100%;
+            display: flex;
+            gap: 14px;
+            align-items: flex-start;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        #gameCanvas {
+            width: 500px;
+            height: 500px;
+            max-width: 100%;
+            border-radius: 10px;
+            background: black;
+            display: block;
+            margin: 0 auto;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        #referenceBox {
+            width: 160px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 10px;
+            color: #f3f4ff;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+        }
+
+        #referenceBox p {
+            font-size: 12px;
+            margin-bottom: 8px;
+            opacity: 0.9;
+        }
+
+        #referenceImage {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            border-radius: 8px;
+            display: block;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #gameUploadBtn {
+            background: #495bd4;
+            padding: 8px 14px;
+            font-size: 13px;
+            margin: 10px 0 0 0;
+            width: 100%;
+        }
+
+        #puzzleImageInput {
+            display: none;
+        }
+
+        #completionScreen {
+            width: 100%;
+            min-height: 520px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            text-align: center;
+            color: #f3f4ff;
+            border-radius: 12px;
+            background: rgba(10, 14, 36, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        #completionTitle {
+            font-size: 30px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        #breathingText {
+            font-size: 16px;
+            opacity: 0.95;
+            margin-bottom: 12px;
+        }
+
+        #breathingCountdown {
+            font-size: 72px;
+            font-weight: 800;
+            line-height: 1;
+            margin-bottom: 18px;
+        }
+
+        #completionPrompt {
+            display: none;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        #completionInput {
+            width: min(560px, 90%);
+            display: none;
+            background: rgba(20, 24, 54, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 10px;
+            color: #ffffff;
+            padding: 12px 14px;
+            font-size: 15px;
+            outline: none;
+        }
+
+        #completionInput::placeholder {
+            color: rgba(255, 255, 255, 0.65);
+        }
+
+        #gameView {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            height: 100%;
+        }
+
+        #gameContainer button {
+            margin: 5px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            border: none;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+
+        #gameContainer button:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        #chatView {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            height: 100%;
+            min-height: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Auth Container -->
+    <div id="authContainer">
+        <h2 id="authTitle">Sign In</h2>
+
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+
+        <!-- Sign In Form -->
+        <form id="signinForm">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="signinEmail" required />
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signinPassword" required />
+            </div>
+            <button type="submit" class="auth-btn">Sign In</button>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="signupForm" class="hidden">
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="signupName" />
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="signupEmail" required />
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="signupPassword" required />
+            </div>
+            <button type="submit" class="auth-btn">Sign Up</button>
+        </form>
+
+        <div class="auth-toggle">
+            <span id="toggleText">Don't have an account?</span>
+            <a id="toggleLink">Sign Up</a>
+        </div>
+    </div>
+
+    <!-- Chat Container -->
+    <div id="chatbox">
+        <div class="header">
+            <div class="header-left">
+                <h2>🤖 RAG Chatbot with Memory</h2>
+                <p>Your personal AI assistant</p>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    Welcome, <span id="userName"></span>!
+                </div>
+                <button class="signout-btn" onclick="showGameView()">🎮 Game</button>
+                <button class="signout-btn" onclick="showChatView()">💬 Chat</button>
+
+                <button class="signout-btn" onclick="signOut()">Sign Out</button>
+            </div>
+        </div>
+        <div id="chatView">
+            <div id="uploadSection">
+                <form id="uploadForm">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" name="file" />
+                        <label class="file-input-label" for="fileInput">
+                            <span id="fileName">Choose a file to upload...</span>
+                        </label>
+                    </div>
+                    <button type="submit" id="uploadBtn">Upload</button>
+                </form>
+            </div>
+
+            <div id="messages">
+                <div class="empty-state">
+                    <p>No messages yet. Upload a document and start chatting!</p>
+                </div>
+            </div>
+
+            <div id="inputSection">
+                <label for="voiceLangSelect" class="hidden">Speech language</label>
+                <select id="voiceLangSelect" title="Speech recognition language (use മലയാളം for Malayalam speech)">
+                    <option value="en-US" selected>🎤 English (US)</option>
+                    <option value="ml-IN">🎤 മലയാളം (Malayalam)</option>
+                </select>
+                <input type="text" id="query" dir="auto" placeholder="Type in English or Malayalam…" />
+                <button id="voiceBtn" class="voice-button">🎤</button>
+                <button id="sendBtn" onclick="sendMessage()" title="Send">
+                    ➤
+                </button>
+            </div>
+        </div>
+        <div id="gameContainer" style="display:none;">
+            <div id="gameStage">
+                <div id="gameHud">
+                    <div class="hud-stats">
+                        <span>Score: <strong id="scoreValue">0</strong></span>
+                        <span>Time: <strong id="timeValue">00:00</strong></span>
+                    </div>
+                    <button id="backToMenuBtn" onclick="backToGameMenu()">⬅ Back</button>
+                </div>
+                <div class="gameBoardRow">
+                    <canvas id="gameCanvas" style="display:none;"></canvas>
+                    <div id="referenceBox">
+                        <p>Original Image</p>
+                        <img id="referenceImage" src="/static/bg1.jpg" alt="Puzzle reference" />
+                        <button id="gameUploadBtn" onclick="triggerPuzzleImageUpload()">Upload Image</button>
+                    </div>
+                </div>
+                <div id="completionScreen">
+                    <p id="completionTitle">Great job!</p>
+                    <p id="breathingText">Breathe slowly for 10 seconds</p>
+                    <p id="breathingCountdown">10</p>
+                    <p id="completionPrompt">How do you feel currently?</p>
+                    <input id="completionInput" type="text" placeholder="Write how you feel and press Enter" />
+                </div>
+                <input type="file" id="puzzleImageInput" accept="image/*" />
+            </div>
+
+            <!-- Game Menu -->
+            <div id="gameMenu">
+                <button onclick="selectGame('puzzle')">🧩 Puzzle</button>
+                <button onclick="selectGame('arrange')">🧱 Arrange</button>
+                <button onclick="selectGame('bubble')">🫧 Bubble Pop</button>
+            </div>
+
+            <!-- Difficulty Menu -->
+            <div id="difficultyMenu" style="display:none;">
+                <button onclick="startSelectedGame('easy')">Easy</button>
+                <button onclick="startSelectedGame('medium')">Medium</button>
+                <button onclick="startSelectedGame('hard')">Hard</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="/static/chat.js"></script>
+    <script src="/static/game.js"></script>
+    <script src="/static/arrange.js"></script>
+</body>
+
+</html>
