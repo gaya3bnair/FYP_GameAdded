@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from langchain.prompts import PromptTemplate
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from sarvam_utils import detect_language, ml_to_en, en_to_ml
+from condition.condition_module import start_condition_test, process_answer, user_sessions
 
 analyzer = SentimentIntensityAnalyzer()
 
@@ -303,6 +304,27 @@ def chat():
     if not query_en or not str(query_en).strip():
         return jsonify({"error": "Empty query"}), 400
 
+    # ===== CONDITION CHECK MODULE =====
+
+    # Check if user already in test
+    if email in user_sessions:
+        response = process_answer(email, raw_query)
+        return jsonify({"response": response})
+
+    # Trigger test
+    query_lower = raw_query.lower()
+
+    if "check adhd" in query_lower:
+        q = start_condition_test(email, "adhd")
+        return jsonify({"response": f"🧠 ADHD Screening Started\n\n{q}\n\n(Answer 0–4)"})
+
+    elif "check anxiety" in query_lower:
+        q = start_condition_test(email, "anxiety")
+        return jsonify({"response": f"😰 Anxiety Screening Started\n\n{q}\n\n(Answer 0–4)"})
+
+    elif "check ocd" in query_lower:
+        q = start_condition_test(email, "ocd")
+        return jsonify({"response": f"🔁 OCD Screening Started\n\n{q}\n\n(Answer 0–4)"})
     # --- SENTIMENT ANALYSIS (English text for consistent scoring) ---
     sentiment = analyzer.polarity_scores(query_en)
     score = sentiment["compound"]
