@@ -21,7 +21,9 @@ from condition.condition_module import start_condition_test, process_answer, use
 
 analyzer = SentimentIntensityAnalyzer()
 
-
+ANXIETY_HINTS = ["worried", "anxious", "panic", "stress", "overthinking", "fear"]
+ADHD_HINTS = ["can't focus", "distracted", "procrastinating", "forgetting", "not finishing"]
+OCD_HINTS = ["checking", "repeat", "obsession", "intrusive", "cleaning", "ritual"]
 load_dotenv()
 
 
@@ -66,6 +68,29 @@ embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 model = ChatGroq(api_key=GROQ_API_KEY, model="llama-3.1-8b-instant")
 
+def detect_condition_hint(text):
+    text = text.lower()
+
+    if any(word in text for word in ANXIETY_HINTS):
+        return "anxiety"
+    if any(word in text for word in ADHD_HINTS):
+        return "adhd"
+    if any(word in text for word in OCD_HINTS):
+        return "ocd"
+
+    return None
+
+def can_suggest_test(email):
+    key = f"last_suggestion:{email}"
+    last_time = redis_client.get(key)
+
+    if last_time:
+        last_time = datetime.fromisoformat(last_time)
+        if datetime.now() - last_time < timedelta(minutes=10):
+            return False
+
+    redis_client.set(key, datetime.now().isoformat())
+    return True
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -309,6 +334,9 @@ def chat():
     # Check if user already in test
     if email in user_sessions:
         response = process_answer(email, raw_query)
+        store_chat_message(email, "user", raw_query)
+        store_chat_message(email, "bot", response)
+
         return jsonify({"response": response})
 
     # Trigger test
@@ -316,18 +344,36 @@ def chat():
 
     if "check adhd" in query_lower:
         q = start_condition_test(email, "adhd")
+        store_chat_message(email, "user", raw_query)
+        store_chat_message(email, "bot", q)
         return jsonify({"response": f"🧠 ADHD Screening Started\n\n{q}\n\n(Answer 0–4)"})
 
     elif "check anxiety" in query_lower:
         q = start_condition_test(email, "anxiety")
+        store_chat_message(email, "user", raw_query)
+        store_chat_message(email, "bot", q)
         return jsonify({"response": f"😰 Anxiety Screening Started\n\n{q}\n\n(Answer 0–4)"})
 
     elif "check ocd" in query_lower:
         q = start_condition_test(email, "ocd")
+        store_chat_message(email, "user", raw_query)
+        store_chat_message(email, "bot", q)
         return jsonify({"response": f"🔁 OCD Screening Started\n\n{q}\n\n(Answer 0–4)"})
     # --- SENTIMENT ANALYSIS (English text for consistent scoring) ---
     sentiment = analyzer.polarity_scores(query_en)
     score = sentiment["compound"]
+    # ===== AUTO CONDITION SUGGESTION =====
+    condition_hint = detect_condition_hint(query_en)
+
+    suggestion_text = ""
+
+    if condition_hint and can_suggest_test(email):
+        if condition_hint == "anxiety":
+            suggestion_text = "\n\n💡 You seem a bit stressed. Would you like to try a quick anxiety check? (type: check anxiety)"
+        elif condition_hint == "adhd":
+            suggestion_text = "\n\n💡 Having focus issues? You can try an ADHD self-check (type: check adhd)"
+        elif condition_hint == "ocd":
+            suggestion_text = "\n\n💡 If repetitive thoughts are bothering you, you can try an OCD check (type: check ocd)"
 
     print("\n=== Sentiment Analysis ===")
     print(f"User (display): {user_display}")
@@ -360,6 +406,13 @@ def chat():
     store_chat_message(email, "user", user_display)
 
     conversation_context = build_conversation_context(email)
+    # Inject condition context
+    condition_data = redis_client.get(f"user_condition:{email}")
+
+    if condition_data:
+        cond, severity = condition_data.split(":")
+        condition_context = f"\nUser recently completed a {cond.upper()} assessment with result: {severity}.\n"
+        conversation_context = condition_context + conversation_context
 
     chroma_client, _, collection_name = get_user_chroma_client(email)
     vectorstore = Chroma(
@@ -443,7 +496,7 @@ Answer:
     # )
 
     response = qa_chain({"query": enhanced_query})
-    bot_response = response["result"]
+    bot_response = response["result"] + suggestion_text
 
     # Malayalam users get sarvam_utils.en_to_ml(English LLM output)
     if lang == "malayalam":
