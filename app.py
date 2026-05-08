@@ -18,6 +18,11 @@ from langchain.prompts import PromptTemplate
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from sarvam_utils import detect_language, ml_to_en, en_to_ml
 from condition.condition_module import start_condition_test, process_answer, user_sessions
+from agentic_kg.graph_agent import AgenticKnowledgeGraph
+from agentic_kg.kg_retriever import KnowledgeGraphRetriever
+from agentic_kg.cypher_agent import CypherAgent
+from agentic_kg.condition_reasoner import ConditionReasoner
+from agentic_kg.empathy_engine import EmpathyEngine
 
 analyzer = SentimentIntensityAnalyzer()
 
@@ -26,6 +31,7 @@ ADHD_HINTS = ["can't focus", "distracted", "procrastinating", "forgetting", "not
 OCD_HINTS = ["checking", "repeat", "obsession", "intrusive", "cleaning", "ritual"]
 load_dotenv()
 
+kg_agent = AgenticKnowledgeGraph()
 
 def reply_language_from_text(text):
     """Malayalam script in user text → reply in Malayalam; otherwise English."""
@@ -495,8 +501,35 @@ Answer:
     #     return_source_documents=True
     # )
 
-    response = qa_chain({"query": enhanced_query})
-    bot_response = response["result"] + suggestion_text
+    # response = qa_chain({"query": enhanced_query})
+    # bot_response = response["result"] + suggestion_text
+    # ============================================
+    # AGENTIC KNOWLEDGE GRAPH CHECK
+    # ============================================
+
+    kg_result = kg_agent.run(query_en)
+
+    print("\n=== KG RESULT ===")
+    print(kg_result)
+    print("=================\n")
+
+    if kg_result["detected"]:
+
+        print("Using KNOWLEDGE GRAPH pipeline")
+
+        bot_response = kg_result["response"]
+
+    else:
+
+        print("Using VECTOR RAG pipeline")
+
+        response = qa_chain.invoke({
+            "query": enhanced_query
+        })
+
+        bot_response = response["result"]
+
+    bot_response += suggestion_text
 
     # Malayalam users get sarvam_utils.en_to_ml(English LLM output)
     if lang == "malayalam":

@@ -58,3 +58,84 @@ node_modules/
 # Jupyter (if any)
 # =========================
 .ipynb_checkpoints/
+
+# =========================
+# HuggingFace / Transformers
+# =========================
+.huggingface/
+huggingface/
+hf_cache/
+transformers_cache/
+
+# =========================
+# Torch / Model caches
+# =========================
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# =========================
+# Chroma / Vector DB extras
+# =========================
+chromadb/
+*.sqlite3
+*.db
+
+# =========================
+# Neo4j local artifacts (if used later)
+# =========================
+neo4j/
+data/
+logs/
+plugins/
+import/
+
+# =========================
+# Audio / Generated media
+# =========================
+*.wav
+*.mp3
+*.ogg
+*.flac
+
+# =========================
+# OCR / PDF temp
+# =========================
+*.pdf.txt
+ocr_output/
+temp/
+tmp/
+
+# =========================
+# Runtime / telemetry
+# =========================
+*.pid
+*.seed
+
+# =========================
+# pytest / coverage
+# =========================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# =========================
+# Build artifacts
+# =========================
+dist/
+build/
+*.egg-info/
+
+# =========================
+# Mac/Linux metadata
+# =========================
+.AppleDouble
+.LSOverride
+
+# =========================
+# Secrets / credentials
+# =========================
+*.pem
+*.key
+*.crt
