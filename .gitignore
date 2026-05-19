@@ -139,3 +139,37 @@ build/
 *.pem
 *.key
 *.crt
+
+# Environment
+.env
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Large model files
+ser_training/data/
+ser_training/model_output/
+
+# Temp audio
+*.wav
+*.webm
+
+# Uploads and DB
+uploads/
+chroma_db/
+
+# Node
+node_modules/
+package-lock.json
+
+# Mac
+.DS_Store
+
+# Misc
+ears_report.docx
+report.js
+eval_ears.py
+eval_ears_com*.py

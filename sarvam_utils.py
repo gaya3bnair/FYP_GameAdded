@@ -9,17 +9,17 @@ Malayalam ↔ English helpers for the chatbot (Helsinki-NLP OPUS-MT models).
 import logging
 
 import torch
-from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+from transformers import MarianTokenizer, MarianMTModel
 
 logger = logging.getLogger(__name__)
 
 # Load models once (lazy-friendly for import time)
-ml_en_tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-ml-en")
-ml_en_model = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-ml-en")
+ml_en_tokenizer = MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-ml-en")
+ml_en_model = MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-ml-en")
 ml_en_model.eval()
 
-en_ml_tokenizer = AutoTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-ml")
-en_ml_model = AutoModelForSeq2SeqLM.from_pretrained("Helsinki-NLP/opus-mt-en-ml")
+en_ml_tokenizer = MarianTokenizer.from_pretrained("Helsinki-NLP/opus-mt-en-ml")
+en_ml_model = MarianMTModel.from_pretrained("Helsinki-NLP/opus-mt-en-ml")
 en_ml_model.eval()
 
 

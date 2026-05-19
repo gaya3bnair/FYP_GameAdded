@@ -22,11 +22,14 @@ class ConditionReasoner:
 
         context = []
 
-        for row in graph_data:
+        for row in graph_data[:20]:   # ← cap at 20 rows as safety net
 
-            context.append(
-                f"{row['source']} {row['relation']} {row['target']}"
-            )
+            source   = row.get('source', '') or ''
+            relation = row.get('relation', '') or ''
+            target   = row.get('target', '') or ''
+
+            if source and target:
+                context.append(f"{source} {relation} {target}")
 
         graph_context = "\n".join(context)
 
