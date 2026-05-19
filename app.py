@@ -33,6 +33,10 @@ from prompts import QA_PROMPT, SUMMARY_PROMPT
 from rlhf_inference_ears import RLHFRanker
 
 load_dotenv()
+# Download models from HF Hub if not present (for cloud deployment)
+import subprocess, sys
+if not os.path.exists("ser_model") or not os.path.exists("reward_model"):
+    subprocess.run([sys.executable, "download_models.py"], check=True)
 
 # ─── Condition hint keywords ───────────────────────────────────────────────────
 ANXIETY_HINTS = ["worried", "anxious", "panic", "stress", "overthinking", "fear"]
